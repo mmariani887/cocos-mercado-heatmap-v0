@@ -1,0 +1,1311 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Cocos Mercado · heatmap V0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+/**
+ * Extracted from cocos-app design-system (Capital light theme).
+ * Sources: design-system/colors/*, tokens.tsx, themes.ts, fonts.ts, shared Text variants.
+ */
+:root {
+  /* Raw palette */
+  --blue900: #113264;
+  --blue800: #0D74CE;
+  --blue700: #0588F0;
+  --blue600: #0090FF;
+  --blue500: #5EB1EF;
+  --blue400: #ACD8FC;
+  --blue300: #C2E5FF;
+  --blue200: #E6F4FE;
+  --blue100: #F4FAFF;
+
+  --slate900: #1C2024;
+  --slate800: #60646C;
+  --slate700: #80838D;
+  --slate600: #8B8D98;
+  --slate500: #B9BBC6;
+  --slate400: #D9D9E0;
+  --slate300: #E0E1E6;
+  --slate200: #F0F0F3;
+  --slate100: #F9F9FB;
+  --slate50: #FCFCFD;
+
+  --green900: #193B2D;
+  --green800: #218358;
+  --green700: #2B9A66;
+  --green600: #30A46C;
+  --green500: #5BB98B;
+  --green400: #ADDDC0;
+  --green300: #C4E8D1;
+  --green200: #E6F6EB;
+
+  --red900: #641723;
+  --red800: #CE2C31;
+  --red700: #DC3E42;
+  --red600: #E5484D;
+  --red500: #EB8E90;
+  --red400: #FDBDBE;
+  --red300: #FFCDCE;
+  --red200: #FEEBEC;
+
+  --white900: #ffffff;
+
+  /* Semantic (themes.ts Capital light) */
+  --brandPrimary: var(--blue800);
+  --brandSecondary: var(--blue900);
+  --brandInactive: var(--slate800);
+  --textPrimary: var(--slate900);
+  --textSecondary: var(--slate800);
+  --successPrimary: var(--green800);
+  --destructivePrimary: var(--red800);
+  --surfacePrimary: var(--white900);
+  --surfaceSecondary: var(--slate100);
+  --surfaceTerciary: var(--slate200);
+  --borderColor: var(--slate400);
+
+  /* Space tokens (tokens.tsx) */
+  --space-xtiny: 2px;
+  --space-tiny: 4px;
+  --space-xxsmall: 6px;
+  --space-xsmall: 8px;
+  --space-small: 12px;
+  --space-base: 16px;
+  --space-medium: 20px;
+  --space-large: 24px;
+  --space-sectionGap: 28px;
+  --space-xlarge: 32px;
+
+  /* Radius */
+  --radius-tiny: 4px;
+  --radius-xxsmall: 6px;
+  --radius-xsmall: 8px;
+  --radius-small: 12px;
+  --radius-base: 16px;
+  --radius-medium: 20px;
+  --radius-full: 9999px;
+
+  --font: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--font);
+  color: var(--textPrimary);
+  background: #111113;
+}
+
+/* Text variants (shared/components/atoms/Text.tsx, SIZE_CORRECTION=1) */
+.t-TitleMedium { font-size: 20px; line-height: 26px; font-weight: 500; }
+.t-TextMedium { font-size: 16px; line-height: 20px; font-weight: 500; letter-spacing: -0.32px; } /* TitleText default */
+.t-TextRegular { font-size: 16px; line-height: 20px; font-weight: 400; }
+.t-TextRegularSmaller { font-size: 14px; line-height: 16px; font-weight: 400; }
+.t-TextRegularSmall { font-size: 12px; line-height: 16px; font-weight: 400; }
+.t-TextRegularXSmall { font-size: 10px; line-height: 14px; font-weight: 400; }
+.t-TextSemiboldSmall { font-size: 12px; line-height: 16px; font-weight: 600; }
+.t-TextSemiboldSmaller { font-size: 14px; line-height: 16px; font-weight: 600; }
+.t-ValueSemiboldSmall { font-size: 12px; line-height: 16px; font-weight: 600; }
+.t-secondary { color: var(--textSecondary); }
+.t-brand { color: var(--brandSecondary); }
+.t-success { color: var(--successPrimary); }
+.t-destructive { color: var(--destructivePrimary); }
+
+.card {
+  background: var(--surfacePrimary);
+  border: 1px solid var(--borderColor);
+  border-radius: var(--radius-base);
+  padding: var(--space-small);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.card.shadow-soft {
+  box-shadow: 0 2px 8px rgba(96, 100, 108, 0.1);
+}
+.btn-ghost {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  color: var(--brandPrimary);
+  padding: 0;
+}
+
+</style>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        padding: 20px 12px 40px;
+        min-height: 100vh;
+        background: #111113;
+      }
+      .stage { width: min(390px, 100%); }
+      .phone {
+        height: 844px;
+        border-radius: 36px;
+        overflow: hidden;
+        background: var(--surfaceSecondary);
+        box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .status {
+        height: 48px;
+        padding: 14px 22px 0;
+        display: flex;
+        justify-content: space-between;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--slate900);
+        background: linear-gradient(180deg, #d7ebff 0%, var(--surfaceSecondary) 100%);
+        flex-shrink: 0;
+      }
+      .scroll-host {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        background:
+          radial-gradient(130% 70% at 50% -20%, rgba(94, 177, 239, 0.35), transparent 55%),
+          linear-gradient(180deg, #e8f3ff 0%, var(--surfaceSecondary) 28%);
+      }
+      .screen {
+        height: 100%;
+        overflow-y: auto;
+        padding-bottom: 96px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .stack-screen { padding-bottom: 24px; background: var(--surfaceSecondary); }
+
+      /* Search pill */
+      .search-wrap {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        padding: 6px 10px 8px;
+        background: linear-gradient(180deg, rgba(232,243,255,0.95), rgba(249,249,251,0.88));
+        backdrop-filter: blur(10px);
+      }
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--surfacePrimary);
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 16px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      }
+      .search input {
+        border: 0;
+        outline: 0;
+        flex: 1;
+        font: inherit;
+        font-size: 15px;
+        background: transparent;
+        color: var(--textPrimary);
+      }
+      .search input::placeholder { color: var(--slate600); }
+      .search-ico { color: var(--slate600); font-size: 16px; }
+
+      /* Chips — 2 rows like live app (Opciones is separate banner) */
+      .chips-block {
+        padding: 4px 10px 10px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--surfacePrimary);
+        border: 0;
+        border-radius: 999px;
+        padding: 6px 12px 6px 6px;
+        cursor: pointer;
+        font: inherit;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      }
+      .chip:active { opacity: 0.7; }
+      .chip-logo {
+        width: 22px; height: 22px; border-radius: 999px;
+        display: grid; place-items: center;
+        font-size: 8px; font-weight: 700; color: white;
+        background: linear-gradient(135deg, var(--blue500), var(--blue800));
+        overflow: hidden;
+      }
+      .chip-logo.cedears { background: linear-gradient(135deg, #0668E1, #1877F2); }
+      .chip-logo.bonos { background: linear-gradient(135deg, #74ACDF, #113264); }
+      .chip-logo.ons { background: linear-gradient(135deg, #0D74CE, #113264); }
+      .chip-logo.caucion { background: linear-gradient(135deg, #74ACDF, #0D74CE); }
+      .chip-logo.fondos { background: linear-gradient(135deg, #218358, #0D74CE); }
+      .chip-logo.letras { background: linear-gradient(135deg, #74ACDF, #CE2C31); }
+
+      /* Opciones | NUEVO banner */
+      .opciones-pill {
+        margin: 0 10px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 32px;
+        padding: 0 12px 0 10px;
+        border-radius: 999px;
+        border: 0;
+        cursor: pointer;
+        background: linear-gradient(90deg, #393B6B, #AAAEE2);
+        color: white;
+        font: inherit;
+        box-shadow: 0 2px 8px rgba(57, 59, 107, 0.25);
+      }
+      .opciones-logos {
+        display: flex;
+        align-items: center;
+      }
+      .opciones-logos span {
+        width: 20px; height: 20px; border-radius: 999px;
+        border: 1.5px solid rgba(255,255,255,0.85);
+        margin-left: -7px;
+        background: #0D74CE;
+        font-size: 7px;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+      }
+      .opciones-logos span:first-child { margin-left: 0; }
+      .opciones-logos span:nth-child(2) { background: #CE2C31; }
+      .opciones-logos span:nth-child(3) { background: #218358; }
+      .opciones-logos span:nth-child(4) { background: #113264; }
+      .opciones-logos span:nth-child(5) { background: #0D74CE; }
+      .opciones-label { font-size: 12px; font-weight: 600; letter-spacing: 0.01em; }
+      .opciones-divider {
+        width: 1px; height: 14px; background: rgba(255,255,255,0.45);
+      }
+      .opciones-nuevo {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        opacity: 0.95;
+      }
+
+      .content {
+        padding: 4px 10px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .index-heatmap {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .heatmap-title {
+        margin: 0 0 8px;
+        font-size: 15px;
+        line-height: 1.25;
+      }
+      .section-title {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--slate900);
+      }
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+      .section-head .section-title { margin: 0; }
+      .meta { margin: 0 0 8px; }
+      .placement {
+        margin: 0 0 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: var(--blue100);
+        border: 1px solid var(--blue300);
+        color: var(--brandSecondary);
+        line-height: 1.4;
+      }
+
+      /* Indexes strip — live order: S&P, Merval, NASDAQ, Riesgo País */
+      .indexes {
+        display: flex;
+        align-items: stretch;
+        justify-content: space-between;
+        gap: 0;
+        padding: 2px 0 0;
+      }
+      .index-btn, .index-static {
+        flex: 1;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        padding: 6px 4px;
+        margin: 0;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        border-radius: 8px;
+        position: relative;
+      }
+      .index-btn + .index-btn::before,
+      .index-static::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 6px;
+        bottom: 6px;
+        width: 1px;
+        background: var(--slate300);
+      }
+      .index-btn.selected {
+        background: rgba(198, 229, 255, 0.65);
+      }
+      .index-bar {
+        width: 2px; height: 28px; border-radius: 999px;
+        background: var(--successPrimary);
+        flex-shrink: 0;
+      }
+      .index-bar.neg { background: var(--destructivePrimary); }
+      .index-bar.flat { background: var(--slate600); }
+      .index-static { cursor: default; opacity: 0.95; }
+
+      /* Argentina card matching live */
+      .ar-card { padding: 4px 10px 0; }
+      .ar-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 12px 0;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        text-align: left;
+      }
+      .ar-row + .ar-row { border-top: 0.5px solid var(--borderColor); }
+      .ar-row .chev { color: var(--slate500); font-size: 16px; margin-left: 8px; }
+      .ar-right { display: flex; align-items: center; gap: 4px; }
+      .ar-right .price { font-weight: 600; font-size: 14px; }
+      .ar-right .pct { font-weight: 600; font-size: 13px; }
+      .ar-right .blue { color: var(--blue800); }
+      .dolares {
+        margin: 4px -12px 0;
+        padding: 12px;
+        border-top: 0.5px solid var(--borderColor);
+        background: var(--surfacePrimary);
+        border-radius: 0 0 16px 16px;
+      }
+      .dolares-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .flag {
+        width: 16px; height: 16px; border-radius: 3px;
+        background: linear-gradient(180deg, #3C3B6E 33%, #fff 33% 66%, #B22234 66%);
+      }
+      .fx-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .fx-item { flex: 1; min-width: 0; }
+      .fx-item + .fx-item {
+        border-left: 0.5px solid var(--borderColor);
+        padding-left: 8px;
+      }
+      .fx-label { font-size: 11px; color: var(--slate800); }
+      .fx-value { font-size: 13px; font-weight: 600; margin-top: 2px; }
+
+      /* Hot */
+      .hot-row {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        padding: 4px 2px 2px;
+        scrollbar-width: none;
+      }
+      .hot-row::-webkit-scrollbar { display: none; }
+      .hot-item {
+        border: 0;
+        background: transparent;
+        font: inherit;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 64px;
+        cursor: pointer;
+        color: inherit;
+        position: relative;
+      }
+      .hot-logo {
+        width: 48px; height: 48px; border-radius: 999px;
+        display: grid; place-items: center;
+        color: white; font-size: 11px; font-weight: 700;
+        background: #111;
+        border: 2px solid var(--green500);
+      }
+      .hot-logo.nuevo-border { border-color: var(--blue400); }
+      .hot-badge {
+        position: absolute;
+        top: -2px; right: 2px;
+        background: var(--blue800);
+        color: white;
+        font-size: 8px;
+        font-weight: 700;
+        padding: 2px 5px;
+        border-radius: 999px;
+      }
+
+      .card {
+        background: var(--surfacePrimary);
+        border: 0;
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+      }
+      .heatmap-card {
+        overflow: visible;
+        padding: 6px;
+      }
+      .heatmap-scroll {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        overscroll-behavior-x: contain;
+        width: 100%;
+      }
+      .heatmap-scroll::-webkit-scrollbar {
+        height: 4px;
+      }
+      .heatmap-scroll::-webkit-scrollbar-thumb {
+        background: var(--slate400);
+        border-radius: 999px;
+      }
+      #map {
+        display: block;
+        height: 420px;
+        max-width: none;
+        /* width set in JS (≥560) so the strip scrolls horizontally */
+      }
+      .legend { margin-top: 10px; }
+      .legend-bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; }
+      .legend-bar span { flex: 1; }
+      .legend-labels { display: flex; justify-content: space-between; margin-top: 6px; }
+
+      .seg {
+        display: flex;
+        background: var(--surfaceTerciary);
+        border-radius: 999px;
+        padding: 3px;
+        height: 32px;
+        align-items: center;
+        gap: 4px;
+        margin: 0 0 10px;
+      }
+      .seg-btn {
+        flex: 1;
+        height: 80%;
+        border: 0;
+        background: transparent;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--textSecondary);
+        cursor: pointer;
+      }
+      .seg-btn.on {
+        background: var(--surfacePrimary);
+        color: var(--brandSecondary);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      }
+      .destacados {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px 4px;
+      }
+      .destacado {
+        border: 0;
+        background: transparent;
+        font: inherit;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        cursor: pointer;
+        color: inherit;
+      }
+      .dest-logo {
+        width: 40px; height: 40px; border-radius: 999px;
+        display: grid; place-items: center;
+        color: white; font-size: 10px; font-weight: 700;
+        background: linear-gradient(145deg, var(--blue500), var(--blue900));
+        margin-bottom: 2px;
+      }
+
+      /* Floating pill tab bar */
+      .tabbar {
+        position: absolute;
+        left: 18px; right: 18px; bottom: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px 12px;
+        background: rgba(255,255,255,0.92);
+        border: 0.5px solid rgba(217,217,224,0.9);
+        border-radius: 999px;
+        box-shadow: 0 8px 28px rgba(17, 50, 100, 0.14);
+        backdrop-filter: blur(16px);
+        z-index: 5;
+      }
+      .tab {
+        flex: 1;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        color: var(--slate800);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        cursor: pointer;
+      }
+      .tab.active { color: var(--blue800); }
+      .tab-ico {
+        width: 28px; height: 28px; border-radius: 999px;
+        display: grid; place-items: center;
+        font-size: 14px;
+        background: transparent;
+      }
+      .tab.active .tab-ico {
+        background: var(--blue200);
+      }
+      .t-TextSemiboldXSmall { font-size: 10px; line-height: 14px; font-weight: 600; }
+
+      .stack-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: var(--surfaceSecondary);
+        border-bottom: 0.5px solid var(--borderColor);
+        position: sticky;
+        top: 0;
+        z-index: 2;
+      }
+      .icon-back {
+        width: 36px; height: 36px;
+        border-radius: 999px;
+        border: 0;
+        background: var(--surfacePrimary);
+        color: var(--brandSecondary);
+        font-size: 18px;
+        cursor: pointer;
+      }
+      .cta {
+        width: 100%;
+        border: 0;
+        border-radius: 999px;
+        padding: 14px;
+        background: var(--brandPrimary);
+        color: white;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .ficha-meta { margin-top: 16px; display: grid; gap: 4px; }
+      .ficha-meta code { font-size: 11px; background: var(--slate200); padding: 1px 4px; border-radius: 4px; }
+      .chart-placeholder {
+        height: 160px;
+        border-radius: 12px;
+        background: linear-gradient(180deg, var(--blue100), var(--surfaceTerciary));
+        display: grid;
+        place-items: center;
+      }
+      .list-row, .fav-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 12px 0;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        text-align: left;
+      }
+      .fav-row + .fav-row { border-top: 0.5px solid var(--borderColor); }
+      .list-row {
+        padding: 12px 16px;
+        border-bottom: 0.5px solid var(--borderColor);
+      }
+      .btn-ghost {
+        border: 0;
+        background: transparent;
+        font: inherit;
+        cursor: pointer;
+        color: var(--brandPrimary);
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="phone">
+        <div class="status"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="scroll-host" id="phone"></div>
+      </div>
+    </div>
+    <script>
+/**
+ * Navigable Mercado home mock — V0: heatmap tied to selected index.
+ * Indexes with heatmaps: MERVAL (acciones), S&P (CEDEARs), Nasdaq (CEDEARs).
+ * Hash routes: #/mercado | #/ficha/:ticker | #/list/:chip | tabs
+ */
+const SATURATION = 0.03;
+/** @type {'MERVAL' | 'SPX' | 'NASDAQ'} */
+let selectedIndexId = "MERVAL";
+
+const HEATMAP_INDEXES = {
+  MERVAL: {
+    id: "MERVAL",
+    label: "MERVAL",
+    stripName: "Merval",
+    value: "+1,46%",
+    sentiment: "pos",
+  },
+  SPX: {
+    id: "SPX",
+    label: "S&P 500",
+    stripName: "S&P 500",
+    value: "−0,07%",
+    sentiment: "neg",
+  },
+  NASDAQ: {
+    id: "NASDAQ",
+    label: "NASDAQ",
+    stripName: "NASDAQ",
+    value: "+0,06%",
+    sentiment: "pos",
+  },
+};
+
+const STRIP_INDEXES = [
+  { id: "SPX", heatmap: true },
+  { id: "MERVAL", heatmap: true },
+  { id: "NASDAQ", heatmap: true },
+  { id: "RIESGO", heatmap: false, stripName: "Riesgo País", value: "846pb", sentiment: "pos", invertArrow: true },
+];
+
+const ITEMS_BY_INDEX = {
+  // Sector labels from BRK-1934 taxonomy (docs/index-constituents/sector-taxonomy.md). Stub remaps only.
+  MERVAL: [
+    { ticker: "YPFD", volume: 4820000, variation: 0.024, sector: "Energia", last: 41200, name: "YPF S.A.", instrumentType: "ACCIONES" },
+    { ticker: "GGAL", volume: 5640000, variation: -0.018, sector: "Finanzas", last: 6850, name: "Grupo Financiero Galicia", instrumentType: "ACCIONES" },
+    { ticker: "PAMP", volume: 3210000, variation: 0.031, sector: "Energia", last: 3180, name: "Pampa Energía", instrumentType: "ACCIONES" },
+    { ticker: "BMA", volume: 2450000, variation: -0.012, sector: "Finanzas", last: 9200, name: "Banco Macro", instrumentType: "ACCIONES" },
+    { ticker: "TXAR", volume: 1980000, variation: 0.008, sector: "Materiales", last: 980, name: "Ternium Argentina", instrumentType: "ACCIONES" },
+    { ticker: "SUPV", volume: 1720000, variation: -0.027, sector: "Finanzas", last: 2140, name: "Grupo Supervielle", instrumentType: "ACCIONES" },
+    { ticker: "CEPU", volume: 1560000, variation: 0.015, sector: "Energia", last: 1450, name: "Central Puerto", instrumentType: "ACCIONES" },
+    { ticker: "ALUA", volume: 1410000, variation: -0.006, sector: "Materiales", last: 870, name: "Aluar", instrumentType: "ACCIONES" },
+    { ticker: "BBAR", volume: 1280000, variation: 0.004, sector: "Finanzas", last: 3120, name: "BBVA Argentina", instrumentType: "ACCIONES" },
+    { ticker: "TRAN", volume: 1150000, variation: -0.009, sector: "Servicios", last: 1560, name: "Transener", instrumentType: "ACCIONES" },
+    { ticker: "TECO2", volume: 980000, variation: 0.011, sector: "Servicios", last: 2150, name: "Telecom Argentina", instrumentType: "ACCIONES" },
+    { ticker: "EDN", volume: 870000, variation: -0.033, sector: "Servicios", last: 1180, name: "Edenor", instrumentType: "ACCIONES" },
+    { ticker: "LOMA", volume: 760000, variation: 0.002, sector: "Materiales", last: 2450, name: "Loma Negra", instrumentType: "ACCIONES" },
+    { ticker: "BYMA", volume: 690000, variation: -0.001, sector: "Finanzas", last: 320, name: "BYMA", instrumentType: "ACCIONES" },
+    { ticker: "CRES", volume: 620000, variation: 0.019, sector: "Materiales", last: 1420, name: "Cresud", instrumentType: "ACCIONES" },
+    { ticker: "COME", volume: 480000, variation: -0.014, sector: "Consumo basico", last: 290, name: "Sociedad Comercial del Plata", instrumentType: "ACCIONES" },
+    { ticker: "MIRG", volume: 250000, variation: 0.028, sector: "Consumo basico", last: 21400, name: "Mirgor", instrumentType: "ACCIONES" },
+  ],
+  SPX: [
+    { ticker: "AAPL", volume: 9200000, variation: 0.012, sector: "Tecnologia", last: 18200, name: "Apple (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "MSFT", volume: 7100000, variation: 0.008, sector: "Tecnologia", last: 22100, name: "Microsoft (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "AMZN", volume: 6800000, variation: -0.015, sector: "Consumo discrecional", last: 9800, name: "Amazon (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "GOOGL", volume: 5400000, variation: 0.021, sector: "Tecnologia", last: 12500, name: "Alphabet (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "META", volume: 5100000, variation: -0.009, sector: "Comunicación", last: 28700, name: "Meta (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "JPM", volume: 3200000, variation: 0.004, sector: "Finanzas", last: 11200, name: "JPMorgan (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "V", volume: 2800000, variation: 0.006, sector: "Finanzas", last: 15600, name: "Visa (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "JNJ", volume: 2100000, variation: -0.003, sector: "Salud", last: 8900, name: "Johnson & Johnson (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "WMT", volume: 1900000, variation: 0.011, sector: "Consumo basico", last: 7600, name: "Walmart (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "XOM", volume: 2400000, variation: -0.018, sector: "Energia", last: 6400, name: "Exxon (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "UNH", volume: 1600000, variation: 0.002, sector: "Salud", last: 31200, name: "UnitedHealth (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "HD", volume: 1500000, variation: -0.007, sector: "Consumo discrecional", last: 19800, name: "Home Depot (CEDEAR)", instrumentType: "CEDEARS" },
+  ],
+  NASDAQ: [
+    { ticker: "NVDA", volume: 12500000, variation: 0.034, sector: "Tecnologia", last: 45200, name: "NVIDIA (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "AAPL", volume: 8800000, variation: 0.012, sector: "Tecnologia", last: 18200, name: "Apple (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "MSFT", volume: 6900000, variation: 0.008, sector: "Tecnologia", last: 22100, name: "Microsoft (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "TSLA", volume: 8100000, variation: -0.028, sector: "Consumo discrecional", last: 14200, name: "Tesla (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "AMZN", volume: 6500000, variation: -0.015, sector: "Consumo discrecional", last: 9800, name: "Amazon (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "META", volume: 4900000, variation: -0.009, sector: "Comunicacion", last: 28700, name: "Meta (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "GOOGL", volume: 5200000, variation: 0.021, sector: "Tecnologia", last: 12500, name: "Alphabet (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "AMD", volume: 4300000, variation: 0.019, sector: "Tecnologia", last: 9800, name: "AMD (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "NFLX", volume: 2700000, variation: 0.014, sector: "Comunicacion", last: 35600, name: "Netflix (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "INTC", volume: 3100000, variation: -0.022, sector: "Tecnologia", last: 2100, name: "Intel (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "AVGO", volume: 2200000, variation: 0.007, sector: "Tecnologia", last: 8900, name: "Broadcom (CEDEAR)", instrumentType: "CEDEARS" },
+    { ticker: "COST", volume: 1800000, variation: 0.003, sector: "Consumo basico", last: 42100, name: "Costco (CEDEAR)", instrumentType: "CEDEARS" },
+  ],
+};
+
+const CHIPS = [
+  { name: "Acciones", code: "ACCIONES", logoClass: "acciones" },
+  { name: "Cedears", code: "CEDEARS", logoClass: "cedears" },
+  { name: "Bonos", code: "BONOS_PUBLICOS", logoClass: "bonos" },
+  { name: "ONs", code: "BONOS_CORP", logoClass: "ons" },
+  { name: "Caución", code: "CAUCION", logoClass: "caucion" },
+  { name: "Fondos", code: "FCI", logoClass: "fondos" },
+  { name: "Letras", code: "LETRAS", logoClass: "letras" },
+];
+
+const TABS = [
+  { id: "inicio", label: "Inicio", hash: "#/inicio" },
+  { id: "mercado", label: "Mercado", hash: "#/mercado" },
+  { id: "fondos", label: "Fondos", hash: "#/fondos" },
+  { id: "actividad", label: "Actividad", hash: "#/actividad" },
+  { id: "portfolio", label: "Portfolio", hash: "#/portfolio" },
+];
+
+function currentItems() {
+  return ITEMS_BY_INDEX[selectedIndexId] || ITEMS_BY_INDEX.MERVAL;
+}
+function currentIndexMeta() {
+  return HEATMAP_INDEXES[selectedIndexId];
+}
+function findItem(ticker) {
+  for (const list of Object.values(ITEMS_BY_INDEX)) {
+    const hit = list.find((i) => i.ticker === ticker);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function $(sel, root = document) { return root.querySelector(sel); }
+function formatPct(v) {
+  const pct = v * 100;
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct.toFixed(2).replace(".", ",")}%`;
+}
+function formatPrice(n) {
+  return n.toLocaleString("es-AR");
+}
+function fillColor(variation) {
+  // Exact 0 only → neutral. Any positive → green; any negative → red. Intensity by |%| up to ±3%.
+  const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  if (variation === 0) return css("--slate400");
+  const intensity = Math.min(Math.abs(variation) / SATURATION, 1);
+  if (variation > 0) {
+    if (intensity >= 0.85) return css("--green800");
+    if (intensity >= 0.45) return css("--green600");
+    return css("--green500");
+  }
+  if (intensity >= 0.85) return css("--red900");
+  if (intensity >= 0.45) return css("--red800");
+  return css("--red500");
+}
+
+function parseRoute() {
+  const raw = location.hash.replace(/^#\/?/, "") || "mercado";
+  const parts = raw.split("/");
+  if (parts[0] === "ficha" && parts[1]) return { name: "ficha", ticker: parts[1].toUpperCase() };
+  if (parts[0] === "list" && parts[1]) return { name: "list", chip: parts[1] };
+  if (["inicio", "mercado", "fondos", "actividad", "portfolio"].includes(parts[0])) return { name: parts[0] };
+  return { name: "mercado" };
+}
+
+function navigate(hash) {
+  if (!hash.startsWith("#")) hash = "#/" + hash.replace(/^\//, "");
+  location.hash = hash;
+}
+
+function renderTabs(activeId) {
+  const icons = { inicio: "⌂", mercado: "↗", fondos: "▮", actividad: "☰", portfolio: "◔" };
+  return `
+    <nav class="tabbar" aria-label="Tabs Cocos">
+      ${TABS.map((t) => `
+        <button type="button" class="tab ${t.id === activeId ? "active" : ""}" data-hash="${t.hash}">
+          <span class="tab-ico" aria-hidden="true">${icons[t.id] || "•"}</span>
+          <span class="t-TextSemiboldXSmall">${t.label}</span>
+        </button>
+      `).join("")}
+    </nav>
+  `;
+}
+
+function renderSearch() {
+  return `
+    <div class="search-wrap">
+      <label class="search">
+        <span class="search-ico" aria-hidden="true">⌕</span>
+        <input type="search" placeholder="Buscá un instrumento" autocomplete="off" />
+      </label>
+    </div>
+  `;
+}
+
+function renderChips() {
+  return `
+    <div class="chips-block">
+      <div class="chips">
+        ${CHIPS.map((c) => `
+          <button type="button" class="chip" data-chip="${c.code}">
+            <span class="chip-logo ${c.logoClass || ""}">${c.name.slice(0, 1)}</span>
+            <span class="t-TextRegularSmall" style="color:var(--slate900);font-weight:500">${c.name}</span>
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderOpcionesBanner() {
+  return `
+    <button type="button" class="opciones-pill" data-chip="OPCIONES">
+      <span class="opciones-logos" aria-hidden="true">
+        <span>TX</span><span>CO</span><span>PA</span><span>YP</span><span>GG</span>
+      </span>
+      <span class="opciones-label">Opciones</span>
+      <span class="opciones-divider"></span>
+      <span class="opciones-nuevo">NUEVO</span>
+    </button>
+  `;
+}
+
+function renderIndexes() {
+  return `
+    <div class="indexes" role="tablist" aria-label="Índices">
+      ${STRIP_INDEXES.map((entry) => {
+        if (!entry.heatmap) {
+          const arrow = entry.invertArrow ? "▼ " : "";
+          return `
+            <div class="index-static" title="Sin heatmap">
+              <div class="index-bar ${entry.sentiment || "flat"}"></div>
+              <div>
+                <div class="t-TextRegularXSmall t-secondary">${entry.stripName}</div>
+                <div class="t-TextSemiboldSmaller ${entry.sentiment === "pos" ? "t-success" : "t-secondary"}">${arrow}${entry.value}</div>
+              </div>
+            </div>
+          `;
+        }
+        const meta = HEATMAP_INDEXES[entry.id];
+        const selected = selectedIndexId === entry.id;
+        return `
+          <button type="button" class="index-btn ${selected ? "selected" : ""}" data-index="${entry.id}" role="tab" aria-selected="${selected}">
+            <div class="index-bar ${meta.sentiment}"></div>
+            <div>
+              <div class="t-TextRegularXSmall t-secondary">${meta.stripName}</div>
+              <div class="t-TextSemiboldSmaller ${meta.sentiment === "neg" ? "t-destructive" : meta.sentiment === "pos" ? "t-success" : "t-secondary"}">
+                ${meta.sentiment === "flat" ? "" : meta.sentiment === "pos" ? "▲ " : "▼ "}${meta.value}
+              </div>
+            </div>
+          </button>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderArgentina() {
+  return `
+    <section>
+      <h2 class="section-title">Argentina</h2>
+      <div class="card ar-card">
+        <button type="button" class="ar-row" data-ticker="GGAL">
+          <span class="t-TextRegularSmaller" style="font-weight:600">AL30</span>
+          <span class="ar-right">
+            <span class="price">US$ 51,57</span>
+            <span class="pct t-success">+0,29%</span>
+            <span class="chev">›</span>
+          </span>
+        </button>
+        <button type="button" class="ar-row" data-chip="CAUCION">
+          <span class="t-TextRegularSmaller" style="font-weight:600">Caución</span>
+          <span class="ar-right">
+            <span class="price blue">20,2% TNA</span>
+            <span class="chev">›</span>
+          </span>
+        </button>
+        <button type="button" class="ar-row">
+          <span class="t-TextRegularSmaller" style="font-weight:600">Lecap Express <span class="t-secondary" style="font-weight:400">(ex Plazo Cocos)</span></span>
+          <span class="ar-right">
+            <span class="price blue">Hasta 22%</span>
+            <span class="chev">›</span>
+          </span>
+        </button>
+        <div class="dolares">
+          <div class="dolares-head"><span class="flag" aria-hidden="true"></span> Dólares</div>
+          <div class="fx-row">
+            <div class="fx-item"><div class="fx-label">Oficial</div><div class="fx-value">$1.568,00</div></div>
+            <div class="fx-item"><div class="fx-label">MEP</div><div class="fx-value">$1.595,31</div></div>
+            <div class="fx-item"><div class="fx-label">CCL</div><div class="fx-value">$1.681,28</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderHot() {
+  const hot = [
+    { ticker: "NVDA", variation: 0.0018, nuevo: false },
+    { ticker: "GOOGL", variation: 0, nuevo: true },
+    { ticker: "AAPL", variation: 0.0136, nuevo: true },
+    { ticker: "AMZN", variation: 0.0092, nuevo: true },
+  ];
+  return `
+    <section>
+      <h2 class="section-title">Hot 🔥</h2>
+      <div class="hot-row">
+        ${hot.map((item) => `
+          <button type="button" class="hot-item" data-ticker="${item.ticker}">
+            ${item.nuevo ? '<span class="hot-badge">NUEVO</span>' : ''}
+            <span class="hot-logo ${item.nuevo ? "nuevo-border" : ""}">${item.ticker.slice(0, 2)}</span>
+            <span class="t-ValueSemiboldSmall">${item.ticker}</span>
+            <span class="t-TextSemiboldSmall ${item.variation < 0 ? "t-destructive" : item.variation === 0 ? "t-secondary" : "t-success"}">${formatPct(item.variation)}</span>
+          </button>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderHeatmapSection() {
+  const meta = currentIndexMeta();
+  return `
+    <section id="heatmap-section">
+      <div class="card heatmap-card">
+        <h2 class="t-TextMedium t-brand heatmap-title">Mapa de Mercado - ${meta.stripName}</h2>
+        <div class="heatmap-scroll" id="heatmap-scroll">
+          <svg id="map" viewBox="0 0 640 420" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Mapa de Mercado ${meta.stripName}"></svg>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderDestacados() {
+  const items = currentItems();
+  const top = [...items].sort((a, b) => b.variation - a.variation).slice(0, 8);
+  return `
+    <section>
+      <h2 class="t-TextMedium t-brand section-title">Destacados de hoy</h2>
+      <div class="card" style="padding-top:8px">
+        <div class="seg" role="tablist">
+          <button type="button" class="seg-btn on" data-seg="gainers">Ganadores</button>
+          <button type="button" class="seg-btn" data-seg="losers">Perdedores</button>
+          <button type="button" class="seg-btn" data-seg="volume">Volumen</button>
+        </div>
+        <div class="destacados" id="destacados">
+          ${top.map((item) => `
+            <button type="button" class="destacado" data-ticker="${item.ticker}">
+              <span class="dest-logo">${item.ticker.slice(0, 2)}</span>
+              <span class="t-ValueSemiboldSmall">${item.ticker}</span>
+              <span class="t-TextSemiboldSmall ${item.variation < 0 ? "t-destructive" : "t-success"}">${formatPct(item.variation)}</span>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderFavoritos() {
+  return `
+    <section>
+      <h2 class="t-TextMedium t-brand section-title">Favoritos</h2>
+      <div class="card">
+        ${["GGAL", "AAPL", "NVDA"].map((t) => `
+          <button type="button" class="fav-row" data-ticker="${t}">
+            <span class="t-TextRegularSmaller">${t}</span>
+            <span class="t-TextRegularSmall t-secondary">Ver ficha →</span>
+          </button>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderMercadoHome() {
+  return `
+    <div class="screen">
+      ${renderSearch()}
+      ${renderChips()}
+      ${renderOpcionesBanner()}
+      <div class="content">
+        <div class="index-heatmap" id="index-heatmap">
+          ${renderIndexes()}
+          ${renderHeatmapSection()}
+        </div>
+        ${renderArgentina()}
+        ${renderHot()}
+        ${renderDestacados()}
+      </div>
+    </div>
+    ${renderTabs("mercado")}
+  `;
+}
+
+function renderFicha(ticker) {
+  const item = findItem(ticker) || {
+    ticker, name: ticker, variation: 0, last: 0, sector: "—", volume: 0, instrumentType: "ACCIONES",
+  };
+  return `
+    <div class="screen stack-screen">
+      <header class="stack-header">
+        <button type="button" class="icon-back" data-action="back" aria-label="Volver">←</button>
+        <div>
+          <div class="t-TextMedium t-brand">${item.ticker}</div>
+          <div class="t-TextRegularXSmall t-secondary">${item.name || ""}</div>
+        </div>
+      </header>
+      <div class="content">
+        <div class="card">
+          <div class="t-TextRegularXSmall t-secondary">Último</div>
+          <div class="t-TitleMedium" style="margin:4px 0 8px">$ ${formatPrice(item.last || 0)}</div>
+          <div class="t-TextSemiboldSmaller ${item.variation < 0 ? "t-destructive" : "t-success"}">${formatPct(item.variation || 0)} · 1D</div>
+          <div class="ficha-meta t-TextRegularSmall t-secondary">
+            <div>Tipo: ${item.instrumentType || "—"}</div>
+            <div>Sector (stub): ${item.sector}</div>
+            <div>Volumen (stub): ${formatPrice(item.volume || 0)}</div>
+            <div>Href app: <code>/(app)/(auth)/market/${item.ticker}</code> · type=${item.instrumentType}</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="t-TextMedium t-brand" style="margin-bottom:8px">Cotización</div>
+          <div class="chart-placeholder t-TextRegularSmall t-secondary">Mock chart · TradingView en app real</div>
+        </div>
+        <button type="button" class="cta" data-action="back">Volver a Mercado</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderList(chipCode) {
+  const chip = CHIPS.find((c) => c.code === chipCode) || { name: chipCode, code: chipCode };
+  let rows = currentItems();
+  if (chipCode === "CEDEARS") rows = [...ITEMS_BY_INDEX.SPX, ...ITEMS_BY_INDEX.NASDAQ]
+    .filter((v, i, a) => a.findIndex((x) => x.ticker === v.ticker) === i);
+  if (chipCode === "ACCIONES") rows = ITEMS_BY_INDEX.MERVAL;
+  if (chipCode === "OPCIONES") {
+    rows = ITEMS_BY_INDEX.MERVAL.slice(0, 5).map((i) => ({ ...i, name: i.name + " · opciones" }));
+  }
+  return `
+    <div class="screen stack-screen">
+      <header class="stack-header">
+        <button type="button" class="icon-back" data-action="back" aria-label="Volver">←</button>
+        <div class="t-TextMedium t-brand">${chip.name}</div>
+      </header>
+      <div class="content">
+        <p class="t-TextRegularSmall t-secondary">Mock de market-list · instrument_type=${chip.code}</p>
+        <div class="card" style="padding:0">
+          ${rows.slice(0, 12).map((item) => `
+            <button type="button" class="list-row" data-ticker="${item.ticker}">
+              <span>
+                <span class="t-TextSemiboldSmaller">${item.ticker}</span>
+                <span class="t-TextRegularXSmall t-secondary" style="display:block">${item.name}</span>
+              </span>
+              <span class="t-TextSemiboldSmall ${item.variation < 0 ? "t-destructive" : "t-success"}">${formatPct(item.variation)}</span>
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTabShell(id, title, blurb) {
+  return `
+    <div class="screen">
+      <div class="content" style="padding-top:24px">
+        <h1 class="t-TitleMedium t-brand">${title}</h1>
+        <p class="t-TextRegularSmaller t-secondary">${blurb}</p>
+        <button type="button" class="cta" data-hash="#/mercado">Ir a Mercado</button>
+      </div>
+    </div>
+    ${renderTabs(id)}
+  `;
+}
+
+function scrollSectorIntoView(sectorName) {
+  const scroller = $("#heatmap-scroll");
+  const svgEl = $("#map");
+  if (!scroller || !svgEl || !sectorName) return;
+  const label = [...svgEl.querySelectorAll("g.sector > text")]
+    .find((t) => (t.textContent || "") === sectorName);
+  if (!label) {
+    scroller.scrollLeft = scroller.scrollWidth;
+    return;
+  }
+  const x0 = parseFloat(label.getAttribute("x")) || 0;
+  // Keep full sector in view (label sits near sector left; leave margin for long names).
+  const pad = 8;
+  const target = Math.max(0, x0 - pad);
+  const max = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+  scroller.scrollLeft = Math.min(target, max);
+}
+
+function renderMap() {
+  const svgEl = $("#map");
+  if (!svgEl || typeof d3 === "undefined") return;
+  const items = currentItems();
+  const scroll = svgEl.closest(".heatmap-scroll");
+  const card = svgEl.closest(".heatmap-card");
+  const visible = scroll ? scroll.clientWidth : (card ? Math.max(300, card.clientWidth - 12) : 354);
+  // Wide canvas for pan readability only — does NOT change volume→area mapping.
+  const width = Math.max(Math.floor(visible * 1.85), 640);
+  const height = 420;
+  svgEl.setAttribute("width", String(width));
+  svgEl.setAttribute("height", String(height));
+  svgEl.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svgEl.setAttribute("preserveAspectRatio", "xMinYMid meet");
+
+  // Strict volume proportionality: leaf value = volume (no ticker/sector floors).
+  const bySector = d3.group(items, (d) => d.sector);
+  const root = d3
+    .hierarchy({
+      children: Array.from(bySector, ([sector, sectorItems]) => ({
+        sector,
+        children: sectorItems.map((item) => ({ ...item, value: item.volume || 0 })),
+      })),
+    })
+    .sum((d) => d.value || 0)
+    .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+  d3.treemap().tile(d3.treemapSquarify).size([width, height]).paddingOuter(2).paddingTop(14).paddingInner(2).round(true)(root);
+  const svg = d3.select(svgEl);
+  svg.selectAll("*").remove();
+  const sectors = svg.selectAll("g.sector").data(root.children).join("g").attr("class", "sector");
+  sectors.append("text").attr("x", (d) => d.x0 + 3).attr("y", (d) => d.y0 + 11)
+    .attr("fill", "#60646C").attr("font-size", 9).attr("font-weight", 600)
+    .text((d) => d.data.sector || "");
+  const cells = sectors.selectAll("g.cell").data((d) => d.children).join("g").attr("class", "cell")
+    .style("cursor", "pointer")
+    .on("click", (_, d) => navigate(`#/ficha/${d.data.ticker}`));
+  cells.append("rect").attr("x", (d) => d.x0).attr("y", (d) => d.y0)
+    .attr("width", (d) => Math.max(0, d.x1 - d.x0)).attr("height", (d) => Math.max(0, d.y1 - d.y0))
+    .attr("rx", 4).attr("fill", (d) => fillColor(d.data.variation));
+  cells.append("text").attr("x", (d) => (d.x0 + d.x1) / 2)
+    .attr("y", (d) => ((d.x1 - d.x0) >= 48 && (d.y1 - d.y0) >= 34 ? (d.y0 + d.y1) / 2 - 5 : (d.y0 + d.y1) / 2 + 3))
+    .attr("text-anchor", "middle").attr("fill", "#1C2024")
+    .attr("font-size", (d) => (d.x1 - d.x0 > 64 ? 11 : 9)).attr("font-weight", 700)
+    .text((d) => (d.x1 - d.x0 >= 26 && d.y1 - d.y0 >= 16 ? d.data.ticker : ""));
+  cells.append("text").attr("x", (d) => (d.x0 + d.x1) / 2).attr("y", (d) => (d.y0 + d.y1) / 2 + 9)
+    .attr("text-anchor", "middle").attr("fill", "#1C2024").attr("font-size", 9).attr("font-weight", 500)
+    .text((d) => (d.x1 - d.x0 >= 48 && d.y1 - d.y0 >= 34 ? formatPct(d.data.variation) : ""));
+
+  // Audit hook: volume vs painted tile area (padding makes shares approximate, not exact).
+  window.__heatmapTileAudit = root.leaves().map((d) => ({
+    ticker: d.data.ticker,
+    volume: d.data.volume || 0,
+    area: Math.max(0, d.x1 - d.x0) * Math.max(0, d.y1 - d.y0),
+  })).sort((a, b) => b.volume - a.volume);
+
+  const params = new URLSearchParams(location.search);
+  const focus = params.get("focus");
+  if (focus) requestAnimationFrame(() => scrollSectorIntoView(focus));
+}
+
+function bindChrome(root) {
+  root.querySelectorAll("[data-hash]").forEach((el) => {
+    el.addEventListener("click", () => navigate(el.getAttribute("data-hash")));
+  });
+  root.querySelectorAll("[data-ticker]").forEach((el) => {
+    el.addEventListener("click", () => navigate(`#/ficha/${el.getAttribute("data-ticker")}`));
+  });
+  root.querySelectorAll("[data-chip]").forEach((el) => {
+    el.addEventListener("click", () => navigate(`#/list/${el.getAttribute("data-chip")}`));
+  });
+  root.querySelectorAll("[data-index]").forEach((el) => {
+    el.addEventListener("click", () => {
+      selectedIndexId = el.getAttribute("data-index");
+      render();
+    });
+  });
+  root.querySelectorAll('[data-action="back"]').forEach((el) => {
+    el.addEventListener("click", () => navigate("#/mercado"));
+  });
+  const seg = root.querySelector(".seg");
+  if (seg) {
+    seg.addEventListener("click", (e) => {
+      const btn = e.target.closest(".seg-btn");
+      if (!btn) return;
+      seg.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("on", b === btn));
+      const mode = btn.getAttribute("data-seg");
+      let list = [...currentItems()];
+      if (mode === "gainers") list.sort((a, b) => b.variation - a.variation);
+      if (mode === "losers") list.sort((a, b) => a.variation - b.variation);
+      if (mode === "volume") list.sort((a, b) => b.volume - a.volume);
+      const grid = $("#destacados");
+      if (!grid) return;
+      grid.innerHTML = list.slice(0, 8).map((item) => `
+        <button type="button" class="destacado" data-ticker="${item.ticker}">
+          <span class="dest-logo">${item.ticker.slice(0, 2)}</span>
+          <span class="t-ValueSemiboldSmall">${item.ticker}</span>
+          <span class="t-TextSemiboldSmall ${item.variation < 0 ? "t-destructive" : "t-success"}">${formatPct(item.variation)}</span>
+        </button>
+      `).join("");
+      grid.querySelectorAll("[data-ticker]").forEach((el) => {
+        el.addEventListener("click", () => navigate(`#/ficha/${el.getAttribute("data-ticker")}`));
+      });
+    });
+  }
+}
+
+function render() {
+  const route = parseRoute();
+  const params = new URLSearchParams(location.search);
+  const idx = params.get("index");
+  if (idx && HEATMAP_INDEXES[idx]) selectedIndexId = idx;
+  const phone = $("#phone");
+  let html = "";
+  if (route.name === "ficha") html = renderFicha(route.ticker);
+  else if (route.name === "list") html = renderList(route.chip);
+  else if (route.name === "inicio") html = renderTabShell("inicio", "Inicio", "Shell de tab · el heatmap vive en Mercado, atado al índice.");
+  else if (route.name === "fondos") html = renderTabShell("fondos", "Fondos", "Shell de tab Fondos.");
+  else if (route.name === "actividad") html = renderTabShell("actividad", "Actividad", "Shell de tab Actividad.");
+  else if (route.name === "portfolio") html = renderTabShell("portfolio", "Portfolio", "Shell de tab Portfolio.");
+  else html = renderMercadoHome();
+
+  phone.innerHTML = html;
+  bindChrome(phone);
+  if (route.name === "mercado") {
+    requestAnimationFrame(() => {
+      renderMap();
+      const scroller = $(".screen");
+      if (!scroller) return;
+      // Stay at top so indexes sit directly above the map (no jump that hides the strip).
+      scroller.scrollTop = 0;
+    });
+  }
+}
+
+window.addEventListener("hashchange", render);
+window.addEventListener("DOMContentLoaded", () => {
+  if (!location.hash) location.hash = "#/mercado";
+  else render();
+});
+
+</script>
+  </body>
+</html>
